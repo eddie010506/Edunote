@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}{{ index_info.title if index_info else index_key }} - {{ class_name }} - {{ subject_name }} - EduNote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">
+            <i class="fas fa-home"></i>
+            Home
+        </a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="{{ url_for('subject_page', subject_name=subject_name) }}">{{ subject_name }}</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="{{ url_for('class_page', subject_name=subject_name, class_name=class_name) }}">{{ class_name }}</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>{{ index_info.title if index_info else index_key }}</span>
+    </div>
+
+    <div class="header">
+        <h1>{{ index_info.title if index_info else index_key }}</h1>
+        <p>{{ subject_name }} • {{ class_name }} • {{ index_info.number if index_info else 'General' }}</p>
+        <button class="btn btn-primary" onclick="showUploadModal('{{ subject_name }}', '{{ class_name }}', '{{ index_key }}')">
+            <i class="fas fa-plus"></i>
+            Add Note
+        </button>
+    </div>
+
+
+    <!-- Notes by Date -->
+    <div class="notes-section">
+        <h2>Your Notes by Date</h2>
+        {% if notes %}
+            <div class="notes-dates-list">
+                {% for note in notes %}
+                <div class="note-date-item" onclick="viewNoteWithContent({{ note.id }})">
+                    <div class="date-info">
+                        <div class="note-date">{{ note.upload_date[:10] }}</div>
+                        <div class="note-time">{{ note.upload_date[11:16] }}</div>
+                    </div>
+                    <div class="note-info">
+                        <div class="note-filename">{{ note.original_name }}</div>
+                        {% if note.ai_analysis.important_points %}
+                        <div class="important-count">
+                            <i class="fas fa-star"></i>
+                            {{ note.ai_analysis.important_points|length }} important fact{{ 's' if note.ai_analysis.important_points|length != 1 else '' }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="note-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h3>No notes yet</h3>
+                <p>Upload your first note for this {{ index_info.type if index_info else 'section' }}!</p>
+                <button class="btn btn-primary" onclick="showUploadModal('{{ subject_name }}', '{{ class_name }}', '{{ index_key }}')">
+                    <i class="fas fa-upload"></i>
+                    Upload First Note
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Note Detail Modal -->
+<div id="noteModal" class="modal">
+    <div class="modal-content note-modal">
+        <div class="modal-header">
+            <h2 id="noteTitle"></h2>
+            <span class="close" onclick="closeNoteModal()">&times;</span>
+        </div>
+        
+        <!-- Main Content Section -->
+        <div class="modal-main-content">
+            <!-- Important Facts Section -->
+            <div class="important-facts-modal" id="importantFactsModal">
+                <h3><i class="fas fa-star"></i> Important Facts from AI Analysis</h3>
+                <div class="facts-grid" id="factsGrid"></div>
+            </div>
+            
+            <!-- Uploaded File Content -->
+            <div class="uploaded-content" id="uploadedContent">
+                <h3><i class="fas fa-file-alt"></i> Uploaded File Content</h3>
+                <div class="file-info" id="fileInfo"></div>
+                <div class="file-content" id="fileContent"></div>
+            </div>
+        </div>
+        
+        <!-- Scrollable Summary Section -->
+        <div class="note-summary-modal" id="noteSummaryModal">
+            <h3><i class="fas fa-list"></i> AI Summary</h3>
+            <div class="summary-content-modal" id="summaryContentModal"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUploadModal(subject = '', className = '', indexKey = '') {
+    if (subject) {
+        document.getElementById('subject').value = subject;
+    }
+    if (className) {
+        document.getElementById('class_name').value = className;
+    }
+    if (indexKey) {
+        document.getElementById('index_key').value = indexKey;
+    }
+    document.getElementById('uploadModal').style.display = 'block';
+}
+
+function viewNoteWithContent(noteId) {
+    fetch(`/api/note/${noteId}`)
+        .then(response => response.json())
+        .then(note => {
+            displayNoteModalWithContent(note);
+        })
+        .catch(error => {
+            console.error('Error loading note:', error);
+            showNotification('Error loading note details', 'error');
+        });
+}
+
+// Keep the old function for compatibility
+function viewNote(noteId) {
+    viewNoteWithContent(noteId);
+}
+
+function displayNoteModalWithContent(note) {
+    const modal = document.getElementById('noteModal');
+    const title = document.getElementById('noteTitle');
+    const factsGrid = document.getElementById('factsGrid');
+    const fileContent = document.getElementById('fileContent');
+    const summaryContent = document.getElementById('summaryContentModal');
+    
+    title.textContent = note.original_name;
+    
+    // Display Important Facts
+    const aiData = note.ai_analysis || {};
+    if (aiData.important_points && aiData.important_points.length > 0) {
+        let factsHtml = '';
+        aiData.important_points.forEach((point, index) => {
+            factsHtml += `
+                <div class="fact-card">
+                    <div class="fact-header">
+                        <div class="fact-number">${index + 1}</div>
+                        <div class="fact-type-badge">${point.type || 'Point'}</div>
+                    </div>
+                    <div class="fact-text-content">${point.text}</div>
+                    <div class="fact-explanation-content">${point.explanation}</div>
+                </div>
+            `;
+        });
+        factsGrid.innerHTML = factsHtml;
+    } else {
+        factsGrid.innerHTML = '<p class="no-facts">No important facts identified by AI analysis.</p>';
+    }
+    
+    // Display Uploaded File Content
+    const fileInfo = document.getElementById('fileInfo');
+    
+    // Show file information
+    fileInfo.innerHTML = `
+        <div class="file-metadata">
+            <div class="file-detail">
+                <strong>Original Filename:</strong> ${escapeHtml(note.original_name)}
+            </div>
+            <div class="file-detail">
+                <strong>Upload Date:</strong> ${escapeHtml(note.upload_date)}
+            </div>
+            <div class="file-detail">
+                <strong>File Size:</strong> ${note.content.length} characters
+            </div>
+        </div>
+    `;
+    
+    // Display the actual file
+    if (note.filename) {
+        const fileExtension = note.filename.split('.').pop().toLowerCase();
+        
+        if (fileExtension === 'pdf') {
+            // Display PDF using iframe
+            fileContent.innerHTML = `
+                <div class="pdf-viewer">
+                    <iframe src="/api/file/${encodeURIComponent(note.filename)}" 
+                            type="application/pdf" 
+                            width="100%" 
+                            height="550px">
+                        <p>Your browser doesn't support PDF viewing. 
+                           <a href="/api/file/${encodeURIComponent(note.filename)}" target="_blank">Click here to download the PDF</a>
+                        </p>
+                    </iframe>
+                </div>
+            `;
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+            // Display images
+            fileContent.innerHTML = `
+                <div class="image-viewer">
+                    <img src="/api/file/${encodeURIComponent(note.filename)}" 
+                         alt="${escapeHtml(note.original_name)}"
+                         style="max-width: 100%; height: auto; border-radius: 8px;">
+                </div>
+            `;
+        } else if (['txt', 'md', 'csv'].includes(fileExtension)) {
+            // Display text files
+            if (note.content && !note.content.includes('[File content could not be read as text:')) {
+                const formattedContent = note.content
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+                
+                fileContent.innerHTML = `
+                    <div class="file-content-formatted">
+                        <p>${formattedContent}</p>
+                    </div>
+                `;
+            } else {
+                fileContent.innerHTML = `
+                    <div class="file-download">
+                        <i class="fas fa-file-alt"></i>
+                        <p>Text file content not available</p>
+                        <a href="/api/file/${encodeURIComponent(note.filename)}" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Download File
+                        </a>
+                    </div>
+                `;
+            }
+        } else {
+            // For other file types, provide download link
+            fileContent.innerHTML = `
+                <div class="file-download">
+                    <i class="fas fa-file"></i>
+                    <p>File type: ${fileExtension.toUpperCase()}</p>
+                    <a href="/api/file/${encodeURIComponent(note.filename)}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-download"></i>
+                        Download File
+                    </a>
+                </div>
+            `;
+        }
+    } else {
+        fileContent.innerHTML = `
+            <div class="file-empty">
+                <i class="fas fa-file"></i>
+                <p>No file available</p>
+            </div>
+        `;
+    }
+    
+    // Display AI Summary (scrollable)
+    let summaryHtml = '<div class="summary-sections">';
+    
+    if (aiData.key_topics && aiData.key_topics.length > 0) {
+        summaryHtml += '<div class="summary-section"><h4><i class="fas fa-tags"></i> Key Topics</h4><ul>';
+        aiData.key_topics.forEach(topic => {
+            summaryHtml += `<li>${escapeHtml(topic)}</li>`;
+        });
+        summaryHtml += '</ul></div>';
+    }
+    
+    if (aiData.important_equations && aiData.important_equations.length > 0) {
+        summaryHtml += '<div class="summary-section"><h4><i class="fas fa-calculator"></i> Important Equations</h4><ul>';
+        aiData.important_equations.forEach(eq => {
+            summaryHtml += `<li><code>${escapeHtml(eq)}</code></li>`;
+        });
+        summaryHtml += '</ul></div>';
+    }
+    
+    if (aiData.test_questions && aiData.test_questions.length > 0) {
+        summaryHtml += '<div class="summary-section"><h4><i class="fas fa-question-circle"></i> Test Questions</h4><ul>';
+        aiData.test_questions.forEach(question => {
+            summaryHtml += `<li>${escapeHtml(question)}</li>`;
+        });
+        summaryHtml += '</ul></div>';
+    }
+    
+    if (aiData.related_links && aiData.related_links.length > 0) {
+        summaryHtml += '<div class="summary-section"><h4><i class="fas fa-link"></i> Related Concepts</h4><ul>';
+        aiData.related_links.forEach(link => {
+            summaryHtml += `<li>${escapeHtml(link)}</li>`;
+        });
+        summaryHtml += '</ul></div>';
+    }
+    
+    if (aiData.index_relevance) {
+        summaryHtml += '<div class="summary-section"><h4><i class="fas fa-book"></i> Textbook Relevance</h4>';
+        summaryHtml += `<p>${escapeHtml(aiData.index_relevance)}</p></div>`;
+    }
+    
+    if (aiData.error) {
+        summaryHtml += '<div class="summary-section error-section"><h4><i class="fas fa-exclamation-triangle"></i> AI Analysis Error</h4>';
+        summaryHtml += `<p>${escapeHtml(aiData.error)}</p></div>`;
+    }
+    
+    summaryHtml += '</div>';
+    summaryContent.innerHTML = summaryHtml;
+    
+    modal.style.display = 'block';
+}
+
+// Keep the old function for compatibility
+function displayNoteModal(note) {
+    displayNoteModalWithContent(note);
+}
+
+function closeNoteModal() {
+    document.getElementById('noteModal').style.display = 'none';
+}
+
+function starNote(noteId) {
+    // Implementation for starring notes
+    console.log('Star note:', noteId);
+}
+
+function highlightNote(noteId) {
+    // Implementation for highlighting notes
+    console.log('Highlight note:', noteId);
+}
+
+function questionNote(noteId) {
+    // Implementation for marking as question
+    console.log('Question note:', noteId);
+}
+
+// Utility Functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Initialize tooltips for important points
+function initializeTooltips() {
+    const pointItems = document.querySelectorAll('.point-item');
+    pointItems.forEach(item => {
+        const explanation = item.getAttribute('data-explanation');
+        const type = item.getAttribute('data-type');
+        
+        if (explanation) {
+            // Create tooltip element
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltiptext';
+            tooltip.innerHTML = `
+                <div class="tooltip-type">${type || 'point'}</div>
+                <div>${escapeHtml(explanation)}</div>
+            `;
+            
+            // Add tooltip class and append tooltip
+            item.classList.add('tooltip');
+            item.appendChild(tooltip);
+        }
+    });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTooltips();
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,92 @@
+{
+  "Math": {
+    "Math292": {
+      "filename": "20250913_154627_Calculus_Chapters.txt",
+      "original_name": "Calculus_Chapters.txt",
+      "content": "1 Functions and Models\n2 Limits and Derivatives\n3 Differentiation Rules\n4 Applications of Differentiation\n5 Integrals\n6 Applications of Integration\n7 Techniques of Integration\n8 Further Applications of Integration\n9 Differential Equations\n10 Parametric Equations and Polar Coordinates\n11 Sequences, Series, and Power Series\n12 Vectors and the Geometry of Space\n13 Vector Functions\n14 Partial Derivatives\n15 Multiple Integrals\n16 Vector Calculus\n",
+      "structure": [
+        {
+          "type": "topic",
+          "title": "1 Functions and Models",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "2 Limits and Derivatives",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "3 Differentiation Rules",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "4 Applications of Differentiation",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "5 Integrals",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "6 Applications of Integration",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "7 Techniques of Integration",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "8 Further Applications of Integration",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "9 Differential Equations",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "10 Parametric Equations and Polar Coordinates",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "11 Sequences, Series, and Power Series",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "12 Vectors and the Geometry of Space",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "13 Vector Functions",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "14 Partial Derivatives",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "15 Multiple Integrals",
+          "level": 0
+        },
+        {
+          "type": "topic",
+          "title": "16 Vector Calculus",
+          "level": 0
+        }
+      ],
+      "upload_date": "2025-09-13T15:46:27.431332"
+    }
+  }
+}

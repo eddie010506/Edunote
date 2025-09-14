@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduNote - Smart Note Management{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>EduNote</span>
+            </div>
+            <div class="nav-menu">
+                <a href="{{ url_for('home') }}" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+                <a href="{{ url_for('manage') }}" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Manage
+                </a>
+                <a href="#" class="nav-link" onclick="showUploadModal()">
+                    <i class="fas fa-upload"></i>
+                    Upload Note
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload New Note</h2>
+                <span class="close" onclick="closeUploadModal()">&times;</span>
+            </div>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="subject">Subject:</label>
+                    <select id="subject" name="subject" required>
+                        <option value="">Select a subject...</option>
+                    </select>
+                    <small>Don't see your subject? <a href="/manage" target="_blank">Create one here</a></small>
+                </div>
+                <div class="form-group">
+                    <label for="class_name">Class:</label>
+                    <select id="class_name" name="class_name" required disabled>
+                        <option value="">Select a subject first...</option>
+                    </select>
+                    <small>Don't see your class? <a href="/manage" target="_blank">Create one here</a></small>
+                </div>
+                <div class="form-group">
+                    <label for="index_key">Textbook Index (Optional):</label>
+                    <select id="index_key" name="index_key" disabled>
+                        <option value="">Auto-detect from textbook index...</option>
+                    </select>
+                    <small>Leave empty for AI to auto-detect based on textbook index</small>
+                </div>
+                <div class="form-group">
+                    <label for="file">Note File:</label>
+                    <input type="file" id="file" name="file" required accept=".txt,.md,.docx,.pdf">
+                    <small>Supported formats: .txt, .md, .docx, .pdf</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload"></i>
+                    Upload & Analyze
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

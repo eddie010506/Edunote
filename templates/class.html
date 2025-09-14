@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}{{ class_name }} - {{ subject_name }} - EduNote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">
+            <i class="fas fa-home"></i>
+            Home
+        </a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="{{ url_for('subject_page', subject_name=subject_name) }}">{{ subject_name }}</a>
+        <i class="fas fa-chevron-right"></i>
+        <span>{{ class_name }}</span>
+    </div>
+
+    <div class="header">
+        <h1>{{ class_name }}</h1>
+        <p>{{ subject_name }} • Textbook Chapters & Sections</p>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="uploadIndex('{{ subject_name }}', '{{ class_name }}')">
+                <i class="fas fa-upload"></i>
+                Upload Index
+            </button>
+            <button class="btn btn-primary" onclick="showUploadModal('{{ subject_name }}', '{{ class_name }}')">
+                <i class="fas fa-plus"></i>
+                Add Note
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Note Tab -->
+    <div class="final-note-tab-section">
+        <button class="final-note-tab" onclick="viewFinalNoteDetails('{{ subject_name }}', '{{ class_name }}')">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Final Note - Test Preparation</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <!-- Textbook Index Structure -->
+    <div class="index-section">
+        <h2>Textbook Structure</h2>
+        {% if indices and indices.structure %}
+            <div class="index-tree">
+                {% for item in indices.structure %}
+                <div class="index-item level-{{ item.level }}" onclick="navigateToIndex('{{ subject_name }}', '{{ class_name }}', '{{ item.title.lower().replace(' ', '_') }}')">
+                    <div class="index-number">{{ item.number or '' }}</div>
+                    <div class="index-title">{{ item.title }}</div>
+                    <div class="index-type">{{ item.type.title() }}</div>
+                    {% if item.note_count and item.note_count > 0 %}
+                    <div class="note-count-badge">{{ item.note_count }} note{{ 's' if item.note_count != 1 else '' }}</div>
+                    {% endif %}
+                    <div class="index-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-book"></i>
+                <h3>No textbook index uploaded</h3>
+                <p>Upload your textbook's table of contents or index to organize your notes by chapters and sections!</p>
+                <button class="btn btn-primary" onclick="uploadIndex('{{ subject_name }}', '{{ class_name }}')">
+                    <i class="fas fa-upload"></i>
+                    Upload Textbook Index
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Notes Summary -->
+    <div class="recent-notes-section">
+        <h2>Recent Notes</h2>
+        <div class="recent-notes-grid">
+            <!-- This will show a summary of recent notes across all indices -->
+            <div class="recent-summary">
+                <div class="summary-card">
+                    <h4><i class="fas fa-chart-line"></i> Study Progress</h4>
+                    <p>Upload notes to see your study progress and AI-generated summaries!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Note Detail Modal -->
+<div id="noteModal" class="modal">
+    <div class="modal-content note-modal">
+        <div class="modal-header">
+            <h2 id="noteTitle"></h2>
+            <span class="close" onclick="closeNoteModal()">&times;</span>
+        </div>
+        <div class="note-content" id="noteContent"></div>
+        <div class="note-analysis" id="noteAnalysis"></div>
+    </div>
+</div>
+
+<!-- Upload Index Modal -->
+<div id="indexUploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Textbook Index</h2>
+            <span class="close" onclick="closeIndexUploadModal()">&times;</span>
+        </div>
+        <form id="indexUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Subject:</label>
+                <input type="text" id="indexSubject" name="subject" readonly>
+            </div>
+            <div class="form-group">
+                <label>Class:</label>
+                <input type="text" id="indexClass" name="class_name" readonly>
+            </div>
+            <div class="form-group">
+                <label for="indexFile">Textbook Index File:</label>
+                <input type="file" id="indexFile" name="file" required accept=".txt,.md">
+                <small>Upload a text file containing the textbook's table of contents or index</small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload"></i>
+                Upload Index
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function navigateToIndex(subjectName, className, indexKey) {
+    window.location.href = `/index/${encodeURIComponent(subjectName)}/${encodeURIComponent(className)}/${encodeURIComponent(indexKey)}`;
+}
+
+function viewFinalNoteDetails(subjectName, className) {
+    window.location.href = `/final-note/${encodeURIComponent(subjectName)}/${encodeURIComponent(className)}`;
+}
+
+// Update note counts live
+function updateNoteCounts() {
+    const subjectName = '{{ subject_name }}';
+    const className = '{{ class_name }}';
+    
+    fetch(`/api/note-counts/${encodeURIComponent(subjectName)}/${encodeURIComponent(className)}`)
+        .then(response => response.json())
+        .then(noteCounts => {
+            console.log('Note counts received:', noteCounts); // Debug log
+            
+            // Update note count badges
+            document.querySelectorAll('.index-item').forEach(item => {
+                const indexTitle = item.querySelector('.index-title').textContent.trim();
+                const indexKey = indexTitle.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                
+                console.log(`Checking index: "${indexTitle}" -> key: "${indexKey}"`); // Debug log
+                
+                const badge = item.querySelector('.note-count-badge');
+                
+                // Check if we have notes for this index
+                if (noteCounts[indexKey] && noteCounts[indexKey] > 0) {
+                    if (!badge) {
+                        const newBadge = document.createElement('div');
+                        newBadge.className = 'note-count-badge';
+                        item.insertBefore(newBadge, item.querySelector('.index-arrow'));
+                    }
+                    const badgeElement = item.querySelector('.note-count-badge');
+                    badgeElement.textContent = `${noteCounts[indexKey]} note${noteCounts[indexKey] !== 1 ? 's' : ''}`;
+                    console.log(`Added badge for ${indexKey}: ${noteCounts[indexKey]} notes`); // Debug log
+                } else if (badge) {
+                    badge.remove();
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error updating note counts:', error);
+        });
+}
+
+// Update counts when page loads and periodically
+document.addEventListener('DOMContentLoaded', function() {
+    updateNoteCounts();
+    setInterval(updateNoteCounts, 5000); // Update every 5 seconds
+});
+
+function showUploadModal(subject = '', className = '') {
+    if (subject) {
+        document.getElementById('subject').value = subject;
+    }
+    if (className) {
+        document.getElementById('class_name').value = className;
+    }
+    document.getElementById('uploadModal').style.display = 'block';
+}
+
+function uploadIndex(subjectName, className) {
+    document.getElementById('indexSubject').value = subjectName;
+    document.getElementById('indexClass').value = className;
+    document.getElementById('indexUploadModal').style.display = 'block';
+}
+
+function closeIndexUploadModal() {
+    document.getElementById('indexUploadModal').style.display = 'none';
+    document.getElementById('indexUploadForm').reset();
+}
+
+// Handle index upload
+document.getElementById('indexUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    submitBtn.disabled = true;
+    
+    fetch('/upload-index', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Index uploaded successfully!', 'success');
+            closeIndexUploadModal();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('Error uploading index: ' + error.message, 'error');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const indexModal = document.getElementById('indexUploadModal');
+    if (event.target === indexModal) {
+        closeIndexUploadModal();
+    }
+};
+</script>
+
+<style>
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.index-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.index-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.index-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    background: #f7fafc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+}
+
+.index-item:hover {
+    background: #e2e8f0;
+    transform: translateX(5px);
+}
+
+.index-item.level-1 {
+    border-left-color: #667eea;
+    font-weight: 600;
+}
+
+.index-item.level-2 {
+    border-left-color: #48bb78;
+    margin-left: 20px;
+}
+
+.index-item.level-3 {
+    border-left-color: #ed8936;
+    margin-left: 40px;
+}
+
+.index-number {
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 60px;
+}
+
+.index-title {
+    flex: 1;
+    color: #2d3748;
+}
+
+.index-type {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.index-arrow {
+    color: #cbd5e0;
+}
+
+.recent-notes-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.recent-summary .summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.recent-summary .summary-card h4 {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+</style>
+{% endblock %}

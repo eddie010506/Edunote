@@ -1,0 +1,79 @@
+{
+  "Math": {
+    "Math292": {
+      "4_applications_of_differentiation": [
+        {
+          "id": 1,
+          "filename": "20250914_021540_Integral_Calculus_Office_Hour_1_Notes.pdf",
+          "original_name": "Integral Calculus Office Hour 1 Notes.pdf",
+          "content": "[File content could not be read as text: 20250914_021540_Integral_Calculus_Office_Hour_1_Notes.pdf]",
+          "upload_date": "2025-09-14T02:15:55.685396",
+          "ai_analysis": {
+            "subject_match": true,
+            "key_topics": [
+              "Double Integrals",
+              "Iterated Integrals",
+              "Integration of 2 Variables",
+              "Type 1 and Type 2 Regions",
+              "Order of Integration"
+            ],
+            "important_equations": [
+              "\u222cR f(x,y) dA = \u222bab \u222bg1(x)g2(x) f(x,y) dy dx",
+              "\u222cR f(x,y) dA = \u222bcd \u222bh1(y)h2(y) f(x,y) dx dy",
+              "\u222bab \u222bcd f(x,y) dy dx = \u222bcd \u222bab f(x,y) dx dy"
+            ],
+            "highlights": [
+              "Theorem on order - \u222bab \u222bcd = \u222bcd \u222bab",
+              "When limit is a function, always inside.",
+              "Definition - if there exist a, b, funcs g1 and g2 such that R = {a \u2264 x \u2264 b, g1(x) \u2264 y \u2264 g2(x)}"
+            ],
+            "important_points": [
+              {
+                "text": "Theorem on order - \u222bab \u222bcd = \u222bcd \u222bab",
+                "explanation": "This theorem states that the order of integration in a double integral can be changed, provided the limits of integration are appropriately adjusted. This is crucial for simplifying calculations and choosing the most efficient approach to solve a problem. The ability to switch the order of integration is often essential when dealing with complex regions of integration.",
+                "type": "theorem"
+              },
+              {
+                "text": "Iterative Integral - \u222bab \u222bcd f(x,y) = \u222bab [\u222bcd f(x,y) dx] dy",
+                "explanation": "This equation defines the process of evaluating a double integral iteratively. First, you integrate with respect to one variable (e.g., x), treating the other variable (y) as a constant. Then, you integrate the result with respect to the second variable. This iterative approach breaks down a double integral into a sequence of simpler single integrals.",
+                "type": "formula"
+              },
+              {
+                "text": "Definition - if there exist a, b, funcs g1 and g2 such that R = {a \u2264 x \u2264 b, g1(x) \u2264 y \u2264 g2(x)}",
+                "explanation": "This defines a Type 1 region in the xy-plane for double integration. The region is bounded by two vertical lines (x = a and x = b) and two curves defined as functions of x (y = g1(x) and y = g2(x)). Understanding this definition is fundamental to setting up double integrals over such regions.",
+                "type": "definition"
+              },
+              {
+                "text": "When limit is a function, always inside.",
+                "explanation": "This is a helpful mnemonic device for setting up the limits of integration in iterated integrals. When the bounds of integration for an inner integral are functions of the outer variable, these functions must be placed *inside* the inner integral. Understanding this ensures you set up your integration correctly.",
+                "type": "rule"
+              },
+              {
+                "text": "Examples demonstrating the evaluation of double integrals over various regions using both Type 1 and Type 2 methods.",
+                "explanation": "The numerous examples in the notes are crucial for understanding how to apply the concepts of double integration to different scenarios. Each example reinforces the techniques and helps to solidify the understanding of different types of regions and the associated integration setups.",
+                "type": "examples"
+              }
+            ],
+            "test_questions": [
+              "Evaluate the double integral \u222cR (x\u00b2 + y\u00b2) dA, where R is the region bounded by y = x, y = x\u00b2, x = 0, and x = 1. Set up the integral in both Type 1 and Type 2 forms and solve.",
+              "Reverse the order of integration in the following double integral: \u222b01 \u222bx1 f(x, y) dy dx",
+              "Sketch the region of integration for the integral \u222b02 \u222b0\u221a(4-x\u00b2) f(x,y) dy dx, and rewrite this integral with the order of integration reversed.",
+              "Evaluate \u222cR xydA where R is the region bounded by y = x and y = x\u00b2",
+              "Set up a double integral (but do not solve) to find the volume under the surface z = x\u00b2 + y\u00b2 above the region bounded by y = x and y = x\u00b3 in the first quadrant."
+            ],
+            "related_links": [
+              "Change of variables in double integrals",
+              "Double integrals in polar coordinates",
+              "Applications of double integrals (e.g., area, volume, center of mass)"
+            ],
+            "index_relevance": "This material aligns with a typical Calculus textbook's chapter on multiple integrals. Look for sections covering double integrals, iterated integrals, Type I and Type II regions, and changing the order of integration. The specific section numbers and titles may vary depending on the textbook used but the topics will be consistently presented in this order."
+          },
+          "index_key": "4_applications_of_differentiation",
+          "highlights": [],
+          "questions": [],
+          "stars": 0
+        }
+      ]
+    }
+  }
+}

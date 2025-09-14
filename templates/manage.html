@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Subjects & Classes - EduNote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">
+            <i class="fas fa-home"></i>
+            Home
+        </a>
+        <i class="fas fa-chevron-right"></i>
+        <span>Manage</span>
+    </div>
+
+    <div class="header">
+        <h1>Manage Subjects & Classes</h1>
+        <p>Set up your study structure before uploading notes</p>
+    </div>
+
+    <!-- Create New Subject -->
+    <div class="management-section">
+        <div class="section-header">
+            <h2><i class="fas fa-folder-plus"></i> Create New Subject</h2>
+        </div>
+        <div class="create-form">
+            <div class="form-group">
+                <input type="text" id="newSubjectName" placeholder="e.g., Mathematics, Computer Science">
+                <button class="btn btn-primary" onclick="createSubject()">
+                    <i class="fas fa-plus"></i>
+                    Create Subject
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Subjects -->
+    <div class="management-section">
+        <div class="section-header">
+            <h2><i class="fas fa-folder"></i> Your Subjects</h2>
+        </div>
+        
+        {% if subjects %}
+            {% for subject_name, subject_data in subjects.items() %}
+            <div class="subject-management-card">
+                <div class="subject-header">
+                    <div class="subject-info">
+                        <h3>{{ subject_name }}</h3>
+                        <p>{{ subject_data.classes|length }} classes</p>
+                    </div>
+                    <div class="subject-actions">
+                        <button class="btn btn-sm" onclick="toggleSubjectClasses('{{ subject_name }}')">
+                            <i class="fas fa-chevron-down" id="chevron-{{ subject_name }}"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="subject-classes" id="classes-{{ subject_name }}" style="display: none;">
+                    <!-- Create New Class -->
+                    <div class="create-class-form">
+                        <div class="form-group">
+                            <input type="text" placeholder="e.g., MATH292, COSC165" data-subject="{{ subject_name }}">
+                            <button class="btn btn-secondary" onclick="createClass('{{ subject_name }}', this)">
+                                <i class="fas fa-plus"></i>
+                                Add Class
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Existing Classes -->
+                    {% if subject_data.classes %}
+                        {% for class_name, class_data in subject_data.classes.items() %}
+                        <div class="class-management-item">
+                            <div class="class-info">
+                                <h4>{{ class_name }}</h4>
+                                <p>{{ class_data.get('created_date', 'Unknown')[:10] }}</p>
+                            </div>
+                            <div class="class-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="uploadIndex('{{ subject_name }}', '{{ class_name }}')">
+                                    <i class="fas fa-upload"></i>
+                                    Upload Index
+                                </button>
+                                <button class="btn btn-sm" onclick="navigateToClass('{{ subject_name }}', '{{ class_name }}')">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-classes">
+                            <p>No classes yet. Create your first class!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>No subjects yet</h3>
+                <p>Create your first subject to get started!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Index Modal -->
+<div id="indexUploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Textbook Index</h2>
+            <span class="close" onclick="closeIndexUploadModal()">&times;</span>
+        </div>
+        <form id="indexUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Subject:</label>
+                <input type="text" id="indexSubject" name="subject" readonly>
+            </div>
+            <div class="form-group">
+                <label>Class:</label>
+                <input type="text" id="indexClass" name="class_name" readonly>
+            </div>
+            <div class="form-group">
+                <label for="indexFile">Textbook Index File:</label>
+                <input type="file" id="indexFile" name="file" required accept=".txt,.md">
+                <small>Upload a text file containing the textbook's table of contents or index</small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload"></i>
+                Upload Index
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function createSubject() {
+    const subjectName = document.getElementById('newSubjectName').value.trim();
+    if (!subjectName) {
+        showNotification('Please enter a subject name', 'error');
+        return;
+    }
+    
+    fetch('/api/subject', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: subjectName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Subject created successfully!', 'success');
+            document.getElementById('newSubjectName').value = '';
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('Error creating subject: ' + error.message, 'error');
+    });
+}
+
+function createClass(subjectName, button) {
+    const input = button.previousElementSibling;
+    const className = input.value.trim();
+    
+    if (!className) {
+        showNotification('Please enter a class name', 'error');
+        return;
+    }
+    
+    fetch(`/api/subject/${encodeURIComponent(subjectName)}/class`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: className })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Class created successfully!', 'success');
+            input.value = '';
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('Error creating class: ' + error.message, 'error');
+    });
+}
+
+function toggleSubjectClasses(subjectName) {
+    const classesDiv = document.getElementById(`classes-${subjectName}`);
+    const chevron = document.getElementById(`chevron-${subjectName}`);
+    
+    if (classesDiv.style.display === 'none') {
+        classesDiv.style.display = 'block';
+        chevron.classList.remove('fa-chevron-down');
+        chevron.classList.add('fa-chevron-up');
+    } else {
+        classesDiv.style.display = 'none';
+        chevron.classList.remove('fa-chevron-up');
+        chevron.classList.add('fa-chevron-down');
+    }
+}
+
+function uploadIndex(subjectName, className) {
+    document.getElementById('indexSubject').value = subjectName;
+    document.getElementById('indexClass').value = className;
+    document.getElementById('indexUploadModal').style.display = 'block';
+}
+
+function closeIndexUploadModal() {
+    document.getElementById('indexUploadModal').style.display = 'none';
+    document.getElementById('indexUploadForm').reset();
+}
+
+function navigateToClass(subjectName, className) {
+    window.location.href = `/class/${encodeURIComponent(subjectName)}/${encodeURIComponent(className)}`;
+}
+
+// Handle index upload
+document.getElementById('indexUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    submitBtn.disabled = true;
+    
+    fetch('/upload-index', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Index uploaded successfully!', 'success');
+            closeIndexUploadModal();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('Error uploading index: ' + error.message, 'error');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('indexUploadModal');
+    if (event.target === modal) {
+        closeIndexUploadModal();
+    }
+};
+</script>
+
+<style>
+.management-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-header h2 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.create-form .form-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.create-form input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.subject-management-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background: #f7fafc;
+}
+
+.subject-info h3 {
+    color: #2d3748;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+}
+
+.subject-info p {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.subject-classes {
+    padding: 25px;
+    background: white;
+}
+
+.create-class-form {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.create-class-form .form-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.create-class-form input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.class-management-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.class-info h4 {
+    color: #2d3748;
+    margin-bottom: 5px;
+}
+
+.class-info p {
+    color: #718096;
+    font-size: 0.8rem;
+}
+
+.class-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.empty-classes {
+    text-align: center;
+    padding: 30px;
+    color: #718096;
+}
+
+.btn-secondary {
+    background: #718096;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4a5568;
+}
+</style>
+{% endblock %}
+

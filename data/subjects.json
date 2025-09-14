@@ -1,0 +1,19 @@
+{
+  "Math": {
+    "name": "Math",
+    "classes": {
+      "Math292": {
+        "name": "Math292",
+        "indices": {},
+        "created_date": "2025-09-13T15:44:51.452860",
+        "note_count": 1
+      }
+    },
+    "created_date": "2025-09-13T15:44:40.492132"
+  },
+  "Computer Science": {
+    "name": "Computer Science",
+    "classes": {},
+    "created_date": "2025-09-14T02:15:22.438501"
+  }
+}

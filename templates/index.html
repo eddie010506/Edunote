@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}EduNote - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Your Study Subjects</h1>
+        <p>Organize your notes by subject and class</p>
+    </div>
+
+    <div class="subjects-grid">
+        {% if subjects %}
+            {% for subject_name, subject_data in subjects.items() %}
+            <div class="subject-card" onclick="navigateToSubject('{{ subject_name }}')">
+                <div class="subject-icon">
+                    <i class="fas fa-folder"></i>
+                </div>
+                <div class="subject-info">
+                    <h3>{{ subject_name }}</h3>
+                    <p>{{ subject_data.classes|length }} classes</p>
+                    <div class="subject-stats">
+                        <span class="note-count" data-subject="{{ subject_name }}">Loading...</span>
+                    </div>
+                </div>
+                <div class="subject-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>No subjects yet</h3>
+                <p>Upload your first note to get started!</p>
+                <button class="btn btn-primary" onclick="showUploadModal()">
+                    <i class="fas fa-upload"></i>
+                    Upload First Note
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+            <div class="action-card" onclick="window.location.href='{{ url_for('manage') }}'">
+                <i class="fas fa-cog"></i>
+                <h4>Manage Subjects</h4>
+                <p>Set up subjects, classes, and textbook indices</p>
+            </div>
+            <div class="action-card" onclick="showUploadModal()">
+                <i class="fas fa-upload"></i>
+                <h4>Upload Note</h4>
+                <p>Add a new note for AI analysis</p>
+            </div>
+            <div class="action-card">
+                <i class="fas fa-search"></i>
+                <h4>Search Notes</h4>
+                <p>Find notes across all subjects</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function navigateToSubject(subjectName) {
+    window.location.href = `/subject/${encodeURIComponent(subjectName)}`;
+}
+
+// Load actual note counts from notes.json
+function loadNoteCounts() {
+    fetch('/api/note-counts')
+        .then(response => response.json())
+        .then(counts => {
+            // Update each subject's note count
+            document.querySelectorAll('.note-count').forEach(element => {
+                const subject = element.getAttribute('data-subject');
+                const totalNotes = counts[subject] || 0;
+                element.textContent = `${totalNotes} note${totalNotes !== 1 ? 's' : ''}`;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading note counts:', error);
+            // Fallback to showing 0 notes
+            document.querySelectorAll('.note-count').forEach(element => {
+                element.textContent = '0 notes';
+            });
+        });
+}
+
+// Load note counts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadNoteCounts();
+});
+</script>
+{% endblock %}

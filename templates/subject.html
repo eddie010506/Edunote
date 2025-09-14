@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ subject_name }} - EduNote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}">
+            <i class="fas fa-home"></i>
+            Home
+        </a>
+        <i class="fas fa-chevron-right"></i>
+        <span>{{ subject_name }}</span>
+    </div>
+
+    <div class="header">
+        <h1>{{ subject_name }}</h1>
+        <p>Select a class to view your notes</p>
+        <button class="btn btn-primary" onclick="showUploadModal('{{ subject_name }}')">
+            <i class="fas fa-plus"></i>
+            Add New Class Note
+        </button>
+    </div>
+
+    <div class="classes-grid">
+        {% if classes %}
+            {% for class_name, class_data in classes.items() %}
+            <div class="class-card" onclick="navigateToClass('{{ subject_name }}', '{{ class_name }}')">
+                <div class="class-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="class-info">
+                    <h3>{{ class_name }}</h3>
+                    <p class="class-note-count" data-subject="{{ subject_name }}" data-class="{{ class_name }}">Loading...</p>
+                    <div class="class-meta">
+                        <span>Created: {{ class_data.created_date[:10] }}</span>
+                    </div>
+                </div>
+                <div class="class-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-book"></i>
+                <h3>No classes yet</h3>
+                <p>Upload your first note to create a class!</p>
+                <button class="btn btn-primary" onclick="showUploadModal('{{ subject_name }}')">
+                    <i class="fas fa-upload"></i>
+                    Upload First Note
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function navigateToClass(subjectName, className) {
+    window.location.href = `/class/${encodeURIComponent(subjectName)}/${encodeURIComponent(className)}`;
+}
+
+function showUploadModal(subject = '') {
+    if (subject) {
+        document.getElementById('subject').value = subject;
+    }
+    document.getElementById('uploadModal').style.display = 'block';
+}
+
+// Load actual note counts for each class
+function loadClassNoteCounts() {
+    const subjectName = '{{ subject_name }}';
+    
+    fetch(`/api/note-counts/${encodeURIComponent(subjectName)}`)
+        .then(response => response.json())
+        .then(counts => {
+            // Update each class's note count
+            document.querySelectorAll('.class-note-count').forEach(element => {
+                const className = element.getAttribute('data-class');
+                const totalNotes = counts[className] || 0;
+                element.textContent = `${totalNotes} note${totalNotes !== 1 ? 's' : ''}`;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading class note counts:', error);
+            // Fallback to showing 0 notes
+            document.querySelectorAll('.class-note-count').forEach(element => {
+                element.textContent = '0 notes';
+            });
+        });
+}
+
+// Load note counts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadClassNoteCounts();
+});
+</script>
+{% endblock %}
